@@ -22,7 +22,7 @@ app.add_middleware(
 
 # Load TFLite model and allocate tensors
 try:
-    interpreter = tf.lite.Interpreter(model_path="model.tflite")
+    interpreter = tf.lite.Interpreter(model_path="mobilevit_s_float16.tflite")
     interpreter.allocate_tensors()
     logger.info("Model loaded successfully")
     
