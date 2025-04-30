@@ -39,22 +39,25 @@ class InputData(BaseModel):
     input: list  # Expect a list of floats, or reshape as needed
 
 @app.post("/predict/")
-def predict(data: InputData):
+async def predict(data: InputData):
     try:
-        # Convert input data to NumPy array with appropriate dtype
+        expected_length = np.prod(input_details[0]['shape'])
+        if len(data.input) != expected_length:
+            raise ValueError(f"Expected {expected_length} values, got {len(data.input)}")
+        logger.info(f"Received input length: {len(data.input)}")
+        
         input_data = np.array(data.input, dtype=np.float32)
-
-        # Reshape if needed
         input_data = input_data.reshape(input_details[0]['shape'])
-
-        # Set tensor and invoke
         interpreter.set_tensor(input_details[0]['index'], input_data)
         interpreter.invoke()
-
-        # Get output
         output_data = interpreter.get_tensor(output_details[0]['index'])
-        return {"prediction": output_data.tolist()}
+        logger.info(f"Raw prediction: {output_data.tolist()}")
 
+        # Flatten the prediction array (from [1, 63] to [63])
+        flat_predictions = output_data[0].tolist()
+        logger.info(f"Flattened prediction: {flat_predictions}")
+
+        return {"prediction": flat_predictions}
     except Exception as e:
         logger.error(f"Prediction error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
